@@ -1,6 +1,5 @@
 import { MDXRemote } from 'next-mdx-remote'
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 
 // import { Vega, VegaLite } from 'react-vega'
 
@@ -17,7 +16,7 @@ const components = {
   // LineChart: dynamic(() => import('../components/LineChart')),
 }
 
-export default function DataLiterate({ children, source, frontMatter }) {
+export default function DRD({ children, source, frontMatter }) {
   return (
     <div className="prose mx-auto">
       <header>
