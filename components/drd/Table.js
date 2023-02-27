@@ -1,7 +1,13 @@
-// import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import axios from "axios";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import React, { useEffect } from "react";
 
-const papa = require("papaparse")
+const papa = require("papaparse");
 
 /*
   Simple HTML Table
@@ -9,42 +15,42 @@ const papa = require("papaparse")
     data:Array<Array<any> >;
     cols:Array<{name:string, key:number|string}>;
 */
-export default function Table({ data=[], cols=[], csv='', url='' }) {
+export default function Table({ data = [], cols = [], csv = "", url = "" }) {
   if (csv) {
-    const out = parseCsv(csv)
-    data = out.rows
-    cols = out.cols
+    const out = parseCsv(csv);
+    data = out.rows;
+    cols = out.fields;
   }
 
-	const [ourdata, setData] = React.useState(data)
-	const [ourcols, setCols] = React.useState(cols)
-	const [error, setError] = React.useState('')
+  const [ourdata, setData] = React.useState(data);
+  const [ourcols, setCols] = React.useState(cols);
+  const [error, setError] = React.useState("");
 
   useEffect(() => {
     if (url) {
-      loadUrl(url)
+      loadUrl(url);
     }
-  }, [url])
+  }, [url]);
 
   function loadUrl(path) {
     // HACK: duplicate of Excel code - maybe refactor
     // if url is external may have CORS issue so we proxy it ...
-    if (url.startsWith('http')) {
-      const PROXY_URL = window.location.origin + '/api/proxy'
-      url = PROXY_URL + '?url=' + encodeURIComponent(url)
+    if (url.startsWith("http")) {
+      const PROXY_URL = window.location.origin + "/api/proxy";
+      url = PROXY_URL + "?url=" + encodeURIComponent(url);
     }
     axios.get(url).then((res) => {
-      const { rows, fields } = parseCsv(res.data)      
-      setData(rows)
-      setCols(fields)
-    })
+      const { rows, fields } = parseCsv(res.data);
+      setData(rows);
+      setCols(fields);
+    });
   }
 
-	return (
+  return (
     <>
       <SimpleTable data={ourdata} cols={ourcols} />
     </>
-	)
+  );
 }
 
 /*
@@ -53,31 +59,62 @@ export default function Table({ data=[], cols=[], csv='', url='' }) {
     data:Array<Array<any> >;
     cols:Array<{name:string, key:number|string}>;
 */
-function SimpleTable({ data=[], cols=[] }) {
-	return (
-		<div className="table-responsive">
-			<table className="table table-striped">
-				<thead>
-					<tr>{cols.map((c) => <th key={c.key}>{c.name}</th>)}</tr>
-				</thead>
-				<tbody>
-					{data.map((r,i) => <tr key={i}>
-						{cols.map(c => <td key={c.key}>{ r[c.key] }</td>)}
-					</tr>)}
-				</tbody>
-			</table>
-		</div>
-	)
+function SimpleTable({ data = [], cols = [] }) {
+  const columns = React.useMemo(() => {
+    const columnHelper = createColumnHelper();
+    return cols.map((c) =>
+      columnHelper.accessor(c.key, {
+        header: () => c.name,
+        cell: (info) => info.getValue(),
+      })
+    );
+  });
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  return (
+    <div>
+      <table>
+        <thead>
+          {table.getHeaderGroups().map((hg) => (
+            <tr key={hg.id}>
+              {hg.headers.map((h) => (
+                <th key={h.id}>
+                  {flexRender(h.column.columnDef.header, h.getContext())}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map((r) => (
+            <tr key={r.id}>
+              {r.getVisibleCells().map((c) => (
+                <td key={c.id}>
+                  {flexRender(c.column.columnDef.cell, c.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function parseCsv(csv) {
-  csv = csv.trim()
-  const rawdata = papa.parse(csv, {header: true})
-  const cols = rawdata.meta.fields.map((r,i) => {
-    return { key: r, name: r }
-  })
+  csv = csv.trim();
+  const rawdata = papa.parse(csv, { header: true });
+  const cols = rawdata.meta.fields.map((r, i) => {
+    return { key: r, name: r };
+  });
+
   return {
     rows: rawdata.data,
-    fields: cols
-  }
+    fields: cols,
+  };
 }
