@@ -1,14 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 
-import parse from '../lib/markdown.js'
+import parse from '../../lib/markdown.js'
 
-import DataLiterate from '../components/drd/DataLiterate'
+import DRD from '../../components/drd/DRD'
 
 
-export default function PostPage({ source, frontMatter }) {
+export default function DRDPage({ source, frontMatter }) {
   return (
-    <DataLiterate source={source} frontMatter={frontMatter} />
+    <DRD source={source} frontMatter={frontMatter} />
   )
 }
 
